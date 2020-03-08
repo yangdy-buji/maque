@@ -1,0 +1,198 @@
+/*
+ * Copyright 2015 Norbert Potocki (norbert.potocki@nort.pl)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.maya.maque.config;
+
+import org.cfg4j.source.context.filesprovider.ConfigFilesProvider;
+import org.cfg4j.source.context.filesprovider.DefaultConfigFilesProvider;
+import org.cfg4j.source.context.propertiesprovider.JsonBasedPropertiesProvider;
+import org.cfg4j.source.context.propertiesprovider.PropertiesProviderSelector;
+import org.cfg4j.source.context.propertiesprovider.PropertyBasedPropertiesProvider;
+import org.cfg4j.source.context.propertiesprovider.YamlBasedPropertiesProvider;
+import org.cfg4j.source.git.AllButFirstTokenPathResolver;
+import org.cfg4j.source.git.BranchResolver;
+import org.cfg4j.source.git.FirstTokenBranchResolver;
+import org.cfg4j.source.git.PathResolver;
+import org.eclipse.jgit.transport.CredentialsProvider;
+import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+/**
+ * Builder for {@link GitConfigurationSource}.
+ */
+public class GitConfigurationSourceBuilder {
+
+  private BranchResolver branchResolver;
+  private PathResolver pathResolver;
+  private String repositoryURI;
+  private Path tmpPath;
+  private String tmpRepoPrefix;
+  private ConfigFilesProvider configFilesProvider;
+  private PropertiesProviderSelector propertiesProviderSelector;
+  private CredentialsProvider credentialsProvider;
+
+  /**
+   * Construct {@link GitConfigurationSource}s builder
+   * <p>
+   * Default setup (override using with*() methods)
+   * <ul>
+   * <li>BranchResolver: {@link FirstTokenBranchResolver}</li>
+   * <li>PathResolver: {@link AllButFirstTokenPathResolver}</li>
+   * <li>ConfigFilesProvider: {@link DefaultConfigFilesProvider}</li>
+   * <li>tmpPath: System.getProperty("java.io.tmpdir")</li>
+   * <li>tmpRepoPrefix: "cfg4j-config-git-config-repository"</li>
+   * <li>propertiesProviderSelector: {@link PropertiesProviderSelector} with {@link PropertyBasedPropertiesProvider}
+   * and {@link YamlBasedPropertiesProvider} providers</li>
+   * </ul>
+   */
+  public GitConfigurationSourceBuilder() {
+    branchResolver = new FirstTokenBranchResolver();
+    pathResolver = new AllButFirstTokenPathResolver();
+    tmpPath = Paths.get(System.getProperty("java.io.tmpdir"));
+    tmpRepoPrefix = "cfg4j-git-config-repository";
+    configFilesProvider = new DefaultConfigFilesProvider();
+    propertiesProviderSelector = new PropertiesProviderSelector(
+        new PropertyBasedPropertiesProvider(), new YamlBasedPropertiesProvider(), new JsonBasedPropertiesProvider()
+    );
+  }
+
+  /**
+   * Set {@link BranchResolver} for {@link GitConfigurationSource}s built by this builder
+   *
+   * @param branchResolver {@link BranchResolver} to use
+   * @return this builder with {@link BranchResolver} set to {@code branchResolver}
+   */
+  public GitConfigurationSourceBuilder withBranchResolver(BranchResolver branchResolver) {
+    this.branchResolver = branchResolver;
+    return this;
+  }
+
+  public GitConfigurationSourceBuilder withCredentialsProvider(CredentialsProvider credentialsProvider) {
+    this.credentialsProvider = credentialsProvider;
+    return this;
+  }
+
+  public GitConfigurationSourceBuilder withCredentials(String username,String password) {
+    this.credentialsProvider = new UsernamePasswordCredentialsProvider( username, password ) ;
+    return this;
+  }
+
+  /**
+   * Set {@link PathResolver} for {@link GitConfigurationSource}s built by this builder
+   *
+   * @param pathResolver {@link PathResolver} to use
+   * @return this builder with {@link PathResolver} set to {@code pathResolver}
+   */
+  public GitConfigurationSourceBuilder withPathResolver(PathResolver pathResolver) {
+    this.pathResolver = pathResolver;
+    return this;
+  }
+
+  /**
+   * Set repository location for {@link GitConfigurationSource}s built by this builder
+   *
+   * @param repositoryURI repository location to use
+   * @return this builder with repository location set to {@code repositoryURI}
+   */
+  public GitConfigurationSourceBuilder withRepositoryURI(String repositoryURI) {
+    this.repositoryURI = repositoryURI;
+    return this;
+  }
+
+  /**
+   * DEPRECATED: Use {@link #withTmpPath(Path)} instead.
+   * <p>
+   * Set temporary dir path for {@link GitConfigurationSource}s built by this builder
+   *
+   * @param tmpPath temporary dir path to use
+   * @return this builder with temporary dir path set to {@code tmpPath}
+   */
+  @Deprecated
+  public GitConfigurationSourceBuilder withTmpPath(String tmpPath) {
+    this.tmpPath = Paths.get(tmpPath);
+    return this;
+  }
+
+  /**
+   * Set temporary dir path for {@link GitConfigurationSource}s built by this builder
+   *
+   * @param tmpPath temporary dir path to use
+   * @return this builder with temporary dir path set to {@code tmpPath}
+   */
+  public GitConfigurationSourceBuilder withTmpPath(Path tmpPath) {
+    this.tmpPath = tmpPath;
+    return this;
+  }
+
+  /**
+   * DEPRECATED: Use {@link #withTmpRepoPrefix(String)} instead.
+   * <p>
+   * Set relative repository path in temporary dir for {@link GitConfigurationSource}s built by this builder
+   *
+   * @param localRepositoryPathInTemp relative repository path in temporary dir to use
+   * @return this builder with relative repository path in temporary dir set to {@code tmpRepoPrefix}
+   */
+  @Deprecated
+  public GitConfigurationSourceBuilder withLocalRepositoryPathInTemp(String localRepositoryPathInTemp) {
+    this.tmpRepoPrefix = localRepositoryPathInTemp;
+    return this;
+  }
+
+  /**
+   * Set relative repository path in temporary dir for {@link GitConfigurationSource}s built by this builder
+   *
+   * @param tmpRepoPrefix relative repository path in temporary dir to use
+   * @return this builder with relative repository path in temporary dir set to {@code tmpRepoPrefix}
+   */
+  public GitConfigurationSourceBuilder withTmpRepoPrefix(String tmpRepoPrefix) {
+    this.tmpRepoPrefix = tmpRepoPrefix;
+    return this;
+  }
+
+  /**
+   * Set {@link ConfigFilesProvider} for {@link GitConfigurationSource}s built by this builder
+   *
+   * @param configFilesProvider {@link ConfigFilesProvider} to use
+   * @return this builder with {@link ConfigFilesProvider} set to {@code configFilesProvider}
+   */
+  public GitConfigurationSourceBuilder withConfigFilesProvider(ConfigFilesProvider configFilesProvider) {
+    this.configFilesProvider = configFilesProvider;
+    return this;
+  }
+
+  /**
+   * Build a {@link GitConfigurationSource} using this builder's configuration
+   *
+   * @return new {@link GitConfigurationSource}
+   */
+  public GitConfigurationSource build() {
+    return new GitConfigurationSource(repositoryURI, tmpPath, tmpRepoPrefix, branchResolver, pathResolver,
+        configFilesProvider, propertiesProviderSelector,credentialsProvider);
+  }
+
+  @Override
+  public String toString() {
+    return "GitConfigurationSourceBuilder{" +
+        "branchResolver=" + branchResolver +
+        ", pathResolver=" + pathResolver +
+        ", repositoryURI='" + repositoryURI + '\'' +
+        ", tmpPath='" + tmpPath + '\'' +
+        ", tmpRepoPrefix='" + tmpRepoPrefix + '\'' +
+        ", configFilesProvider=" + configFilesProvider +
+        '}';
+  }
+}
